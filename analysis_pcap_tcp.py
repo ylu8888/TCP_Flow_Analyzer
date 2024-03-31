@@ -7,7 +7,6 @@ def analysis_pcap_tcp(filename):
     receiverIP = '128.208.2.198'
 
     tcpFlows = {} #use a dict to store the tcp flows
-    synfinFlag = False
    
     with open(filename, 'rb') as file:  #open and read the pcap file
         pcap = dpkt.pcap.Reader(file)
@@ -27,11 +26,11 @@ def analysis_pcap_tcp(filename):
                     if tcp.sport == 80:
                         continue #traffic from port 80 is just ACK packets for seq #1
 
-                    if senderIP != dpkt.utils.inet_to_str(ip.src):
+                    if senderIP != '.'.join(str(ip) for ip in ip.src) or receiverIP != '.'.join(str(ip) for ip in ip.dst):
                         continue #if the source and dest ip addresses dont match
                     
                     #get le tuple
-                    flowTuple = (tcp.sport, senderIP, tcp.dport, receiverIP)
+                    flowTuple = (tcp.sport, '.'.join(str(ip) for ip in ip.src), '.'.join(str(ip) for ip in ip.dst))
                     
                     #new flow? add it to the dict with flowtuple as key
                     if flowTuple not in tcpFlows:
@@ -57,8 +56,14 @@ def analysis_pcap_tcp(filename):
         for tcpPkt in tcpPackets:
             
             print("this is transaction", count, ":")
-            print("sequence number:", tcpPkt.seq)
-            print("acknowledgment number:", tcpPkt.ack)
+
+            seq_num_bytes = tcpPkt.data[4:8]
+            seq_num = int.from_bytes(seq_num_bytes, byteorder='big')
+            # Extract acknowledgment number (4 bytes, starting at byte 8 in TCP header)
+            ack_num_bytes = tcpPkt.data[8:12]
+            ack_num = int.from_bytes(ack_num_bytes, byteorder='big')
+            print("Sequence number:", seq_num)
+            print("Acknowledgment number:", ack_num)
             print("receive Window size:", tcpPkt.win)
 
             print()  #new ljne
