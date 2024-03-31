@@ -27,7 +27,7 @@ def analysis_pcap_tcp(filename):
                     if tcp.sport == 80:
                         continue #traffic from port 80 is just ACK packets for seq #1
 
-                    if senderIP != dpkt.utils.inet_to_str(ip.src) or receiverIP != dpkt.utils.inet_to_str(ip.dst):
+                    if senderIP != dpkt.utils.inet_to_str(ip.src):
                         continue #if the source and dest ip addresses dont match
                     
                     #get le tuple
@@ -50,7 +50,7 @@ def analysis_pcap_tcp(filename):
 
         # print("first 2 transactions:")
 
-        # print("this is the tcp len", len(tcpPackets))
+        print("this is the tcp len", len(tcpPackets))
 
         count = 1
 
