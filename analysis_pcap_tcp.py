@@ -12,8 +12,6 @@ def analysis_pcap_tcp(filename):
     with open(filename, 'rb') as file:  #open and read the pcap file
         pcap = dpkt.pcap.Reader(file)
         
-        currFlow = None 
-        
         for timestamp, buffer in pcap:      #loop through data in file
 
             ether = dpkt.ethernet.Ethernet(buffer)
@@ -38,19 +36,11 @@ def analysis_pcap_tcp(filename):
                     #new flow? add it to the dict with flowtuple as key
                     if flowTuple not in tcpFlows:
                         tcpFlows[flowTuple] = []
-                        currFlow = flowTuple
-                        synfinFlag = False
                     
                     tcp.ts = timestamp #mabyue delete this
-                    tcpFlows[currFlow].append(tcp)  #add the tcp packet to our flow
+                    tcpFlows[flowTuple].append(tcp)  #add the tcp packet to our flow
 
-                    # Check for TCP flow start (SYN flag)
-                    if tcp.flags & dpkt.tcp.TH_SYN:
-                        synfinFlag = True
                     
-                    # Check for TCP flow end (FIN flag)
-                    if tcp.flags & dpkt.tcp.TH_FIN:
-                        synfinFlag = False
         
     print("Number of TCP Flows:", len(tcpFlows))
     print()
@@ -58,24 +48,24 @@ def analysis_pcap_tcp(filename):
     for flowTuple, tcpPackets in tcpFlows.items():
         print("TCP flow:", flowTuple)
 
-        print("first 2 transactions:")
+        # print("first 2 transactions:")
 
-        print("this is the tcp len", len(tcpPackets))
+        # print("this is the tcp len", len(tcpPackets))
 
-        count = 0
+        count = 1
 
         for tcpPkt in tcpPackets:
+            
+            print("this is transaction", count, ":")
+            print("sequence number:", tcpPkt.seq)
+            print("acknowledgment number:", tcpPkt.ack)
+            print("receive Window size:", tcpPkt.win)
 
-            if synfinFlag:
-                print("sequence number:", tcpPkt.seq)
-                print("acknowledgment number:", tcpPkt.ack)
-                print("receive Window size:", tcpPkt.win)
+            print()  #new ljne
 
-                print()  #new ljne
-
-                count += 1
-                if(count == 2):
-                    break
+            count += 1
+            if(count == 3):
+                break
         
         
         
