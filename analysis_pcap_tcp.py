@@ -26,11 +26,11 @@ def analysis_pcap_tcp(filename):
                     if tcp.sport == 80:
                         continue #traffic from port 80 is just ACK packets for seq #1
 
-                    if senderIP != '.'.join(str(ip) for ip in ip.src) or receiverIP != '.'.join(str(ip) for ip in ip.dst):
+                    if senderIP != '.'.join(str(ip) for ip in ip.src):
                         continue #if the source and dest ip addresses dont match
                     
                     #get le tuple
-                    flowTuple = (tcp.sport, '.'.join(str(ip) for ip in ip.src), '.'.join(str(ip) for ip in ip.dst))
+                    flowTuple = (tcp.sport, '.'.join(str(ip) for ip in ip.src), tcp.dport, '.'.join(str(ip) for ip in ip.dst))
                     
                     #new flow? add it to the dict with flowtuple as key
                     if flowTuple not in tcpFlows:
@@ -55,26 +55,31 @@ def analysis_pcap_tcp(filename):
 
         for tcpPkt in tcpPackets:
             
-            print("this is transaction", count, ":")
+            #check if NOT syn
+            #check if HAS ack
+            #check if has payload
+            if tcpPkt.flags & dpkt.tcp.TH_SYN == 0 and tcpPkt.flags & dpkt.tcp.TH_ACK != 0:
+                paylen =  len(tcpPkt.data) #THIS THE PAYLOAD LENGTH
 
-            seq_num_bytes = tcpPkt.data[4:8]
-            seq_num = int.from_bytes(seq_num_bytes, byteorder='big')
-            # Extract acknowledgment number (4 bytes, starting at byte 8 in TCP header)
-            ack_num_bytes = tcpPkt.data[8:12]
-            ack_num = int.from_bytes(ack_num_bytes, byteorder='big')
-            print("Sequence number:", seq_num)
-            print("Acknowledgment number:", ack_num)
-            print("receive Window size:", tcpPkt.win)
+                if paylen <= 0: #IF NO PAYLOAD THEN THIS NOT THE ONE
+                    continue
 
-            print()  #new ljne
+                print("this is transaction", count, ":")
 
-            count += 1
-            if(count == 3):
-                break
+                print("sequence number:", tcpPkt.seq)
+                print("acknowledgment number:", tcpPkt.ack)
+
+                #look through options to get the window scaling factor TIMES the window value
+                print("receive window size:", tcpPkt.win)
+                print()  #new ljne
+
+                count += 1
+                if(count == 3):
+                    break
+
+
         
-        
-        
-        print()  # Add a newline between flows
+        #print()  # Add a newline between flows
 
 
 def main():
