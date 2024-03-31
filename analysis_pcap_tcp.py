@@ -7,11 +7,12 @@ def analysis_pcap_tcp(filename):
     receiverIP = '128.208.2.198'
 
     tcpFlows = {} #use a dict to store the tcp flows
+    synfinFlag = False
    
     with open(filename, 'rb') as file:  #open and read the pcap file
         pcap = dpkt.pcap.Reader(file)
         
-        currFlow = None  # Variable to track the current TCP flow being processed
+        currFlow = None 
         
         for timestamp, buffer in pcap:      #loop through data in file
 
@@ -27,33 +28,54 @@ def analysis_pcap_tcp(filename):
                     #we do not need to count the flows coming from port 80, also flows are bi-directional
                     if tcp.sport == 80:
                         continue #traffic from port 80 is just ACK packets for seq #1
+
+                    if senderIP != dpkt.utils.inet_to_str(ip.src) or receiverIP != dpkt.utils.inet_to_str(ip.dst):
+                        continue #if the source and dest ip addresses dont match
                     
                     #get le tuple
                     flowTuple = (tcp.sport, senderIP, tcp.dport, receiverIP)
                     
-                    #new flow?
+                    #new flow? add it to the dict with flowtuple as key
                     if flowTuple not in tcpFlows:
                         tcpFlows[flowTuple] = []
                         currFlow = flowTuple
+                        synfinFlag = False
                     
-                    #append flow
                     tcp.ts = timestamp #mabyue delete this
-                    tcpFlows[currFlow].append(tcp)
-    
+                    tcpFlows[currFlow].append(tcp)  #add the tcp packet to our flow
+
+                    # Check for TCP flow start (SYN flag)
+                    if tcp.flags & dpkt.tcp.TH_SYN:
+                        synfinFlag = True
+                    
+                    # Check for TCP flow end (FIN flag)
+                    if tcp.flags & dpkt.tcp.TH_FIN:
+                        synfinFlag = False
+        
+    print("Number of TCP Flows:", len(tcpFlows))
+    print()
+
     for flowTuple, tcpPackets in tcpFlows.items():
-        print("tcp flow:", flowTuple)
+        print("TCP flow:", flowTuple)
 
         print("first 2 transactions:")
 
         print("this is the tcp len", len(tcpPackets))
 
-        for i in range(min(2, len(tcpPackets))):
+        count = 0
 
-            print("sequence number:", tcpPackets[i].seq)
-            print("acknowledgment number:", tcpPackets[i].ack)
-            print("receive Window size:", tcpPackets[i].win)
+        for tcpPkt in tcpPackets:
 
-            print()  #new ljne
+            if synfinFlag:
+                print("sequence number:", tcpPkt.seq)
+                print("acknowledgment number:", tcpPkt.ack)
+                print("receive Window size:", tcpPkt.win)
+
+                print()  #new ljne
+
+                count += 1
+                if(count == 2):
+                    break
         
         
         
