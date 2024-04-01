@@ -55,6 +55,7 @@ def analysis_pcap_tcp(filename):
         firstSyn = True
         startTime = 0
         endTime = 0
+        almostLast = False
 
         for tcpPkt in tcpPackets:
 
@@ -98,13 +99,28 @@ def analysis_pcap_tcp(filename):
 
                 count += 1
                 if(count == 3): #only want the first 2 transactions
+                    print('throughput: ', throughput)
+                    print()  #new ljne
                     break
+            
+            if(almostLast and (tcpPkt.flags & dpkt.tcp.TH_ACK != 0)):
+                endTime = tcpPkt.ts
+
+            if (tcpPkt.flags & dpkt.tcp.TH_FIN != 0) and (tcpPkt.flags & dpkt.tcp.TH_ACK != 0): 
+                almostLast = True
+            
             
             #throughput is total bytes of header + payload divided by the total time
             #the time is just the time between the FIRST syn
             #and the LAST ack, which comes AFTER the FIN/ACK
             totalBytes +=  len(tcpPkt.data) # add the payload
-            totalBytes += (tcpPkt.off * 4) # add the header
+            totalBytes += ((tcpPkt.off * 4) + 20) # add the header
+            totalTime = startTime - endTime
+            print('le total time', totalTime)
+
+            throughput = totalBytes / (startTime - endTime)
+            
+
 
 
 def main():
