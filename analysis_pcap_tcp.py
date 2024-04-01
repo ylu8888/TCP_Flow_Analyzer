@@ -52,11 +52,21 @@ def analysis_pcap_tcp(filename):
 
         count = 1
         scaleFactor = 0
+        firstSyn = True
+        startTime = 0
+        endTime = 0
 
         for tcpPkt in tcpPackets:
+
+            totalBytes = 0
             
             #WE GOTAT GET THE WINDOW SCALEING FACTOR FROM THE SYNNNNNN PACKET
             if (tcpPkt.flags & dpkt.tcp.TH_SYN != 0) and (tcpPkt.flags & dpkt.tcp.TH_ACK == 0): 
+
+                if(firstSyn):   #we want the time from when the FIRST syn packet is sent
+                    startTime = tcpPkt.ts
+                    firstSyn = False
+
                 leOptions = dpkt.tcp.parse_opts(tcpPkt.opts) #PARSE THE OPTIONS INTO (TYPE/DATA) TUPLES
                # print('thIS LE OPTIONS', leOptions)
 
@@ -89,6 +99,13 @@ def analysis_pcap_tcp(filename):
                 count += 1
                 if(count == 3): #only want the first 2 transactions
                     break
+            
+            #throughput is total bytes of header + payload divided by the total time
+            #the time is just the time between the FIRST syn
+            #and the LAST ack, which comes AFTER the FIN/ACK
+            totalBytes +=  len(tcpPkt.data) # add the payload
+            totalBytes += (tcpPkt.off * 4) # add the header
+
 
 def main():
     analysis_pcap_tcp('assignment2.pcap')
