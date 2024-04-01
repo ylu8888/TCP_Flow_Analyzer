@@ -45,6 +45,7 @@ def analysis_pcap_tcp(filename):
 
     for flowTuple, tcpPackets in tcpFlows.items():
         print("TCP flow:", flowTuple)
+        print()
 
         # print("first 2 transactions:")
 
@@ -62,7 +63,7 @@ def analysis_pcap_tcp(filename):
         for index, tcpPkt in enumerate(tcpPackets):
             #ADD THE TOTAL BYTES FOR THE THRUPUT 
             totalBytes +=  len(tcpPkt.data) # add the payload
-            totalBytes += ((tcpPkt.off * 4) + 20) # add the header
+            totalBytes += (tcpPkt.off * 4) # add the header    
 
             #GETTING THE LAST ACKKKKKK
             if index == len(tcpPackets) - 1:
@@ -102,7 +103,7 @@ def analysis_pcap_tcp(filename):
                     continue
 
                 if(count < 3): #only want the first 2 transactions
-                    print("this is transaction", count, ":")
+                    print("transaction", count, ":")
 
                     print("sequence number:", tcpPkt.seq)
                     print("acknowledgment number:", tcpPkt.ack)
@@ -122,11 +123,11 @@ def analysis_pcap_tcp(filename):
             #and the LAST ack, which comes AFTER the FIN/ACK
             
         totalTime = endTime - startTime
-        print('le total time', totalTime)
+        #print('le total time', totalTime)
 
-        throughput = totalBytes/ totalTime
+        throughput = totalBytes / totalTime
         #print('LE TOTAL BYTES', totalBytes)
-        print('throughput: ', throughput)
+        print('throughput:', throughput)
         print()  #new ljne
             
 
