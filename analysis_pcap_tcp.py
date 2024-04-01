@@ -47,8 +47,7 @@ def analysis_pcap_tcp(filename):
         print("TCP flow:", flowTuple)
         print()
 
-        # print("first 2 transactions:")
-
+        #print("first 2 transactions:")
         #print("this is the tcp len", len(tcpPackets))
 
         count = 1
