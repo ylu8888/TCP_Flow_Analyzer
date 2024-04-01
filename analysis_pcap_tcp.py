@@ -52,21 +52,31 @@ def analysis_pcap_tcp(filename):
 
         count = 1
         scaleFactor = 0
-        firstSyn = True
         startTime = 0
         endTime = 0
+        firstSyn = True
         almostLast = False
+        throughput = 0
+        totalBytes = 0
 
-        for tcpPkt in tcpPackets:
+        for index, tcpPkt in enumerate(tcpPackets):
+            #ADD THE TOTAL BYTES FOR THE THRUPUT 
+            totalBytes +=  len(tcpPkt.data) # add the payload
+            totalBytes += ((tcpPkt.off * 4) + 20) # add the header
 
-            totalBytes = 0
-            
+            #GETTING THE LAST ACKKKKKK
+            if index == len(tcpPackets) - 1:
+                if(almostLast == True) and (tcpPkt.flags & dpkt.tcp.TH_ACK != 0):
+                    #print('ACKKKKKKKKKKKKKKKKKKKKK')
+                    endTime = tcpPkt.ts
+                    #print('le end time', endTime)
+
             #WE GOTAT GET THE WINDOW SCALEING FACTOR FROM THE SYNNNNNN PACKET
             if (tcpPkt.flags & dpkt.tcp.TH_SYN != 0) and (tcpPkt.flags & dpkt.tcp.TH_ACK == 0): 
-
                 if(firstSyn):   #we want the time from when the FIRST syn packet is sent
                     startTime = tcpPkt.ts
                     firstSyn = False
+                   # print('le start time', startTime)
 
                 leOptions = dpkt.tcp.parse_opts(tcpPkt.opts) #PARSE THE OPTIONS INTO (TYPE/DATA) TUPLES
                # print('thIS LE OPTIONS', leOptions)
@@ -81,6 +91,7 @@ def analysis_pcap_tcp(filename):
                         #print('scale factr', scaleFactor)
                         break
             
+            #GETTING THE FIRST TWO TRANSACTIONS
             #check if NOT syn
             #check if HAS ack
             #check if has payload
@@ -90,35 +101,33 @@ def analysis_pcap_tcp(filename):
                 if paylen <= 0: #IF NO PAYLOAD THEN THIS NOT THE ONE
                     continue
 
-                print("this is transaction", count, ":")
+                if(count < 3): #only want the first 2 transactions
+                    print("this is transaction", count, ":")
 
-                print("sequence number:", tcpPkt.seq)
-                print("acknowledgment number:", tcpPkt.ack)
-                print("receive window size:", tcpPkt.win * scaleFactor) 
-                print()  #new ljne
-
-                count += 1
-                if(count == 3): #only want the first 2 transactions
-                    print('throughput: ', throughput)
+                    print("sequence number:", tcpPkt.seq)
+                    print("acknowledgment number:", tcpPkt.ack)
+                    print("receive window size:", tcpPkt.win * scaleFactor) 
+                    
                     print()  #new ljne
-                    break
-            
-            if(almostLast and (tcpPkt.flags & dpkt.tcp.TH_ACK != 0)):
-                endTime = tcpPkt.ts
 
+                    count += 1
+                
+            #gettiNG THE LAST FIN / ACK
             if (tcpPkt.flags & dpkt.tcp.TH_FIN != 0) and (tcpPkt.flags & dpkt.tcp.TH_ACK != 0): 
+                #print('HIT THE ACKKK', endTime)
                 almostLast = True
-            
             
             #throughput is total bytes of header + payload divided by the total time
             #the time is just the time between the FIRST syn
             #and the LAST ack, which comes AFTER the FIN/ACK
-            totalBytes +=  len(tcpPkt.data) # add the payload
-            totalBytes += ((tcpPkt.off * 4) + 20) # add the header
-            totalTime = startTime - endTime
-            print('le total time', totalTime)
+            
+        totalTime = endTime - startTime
+        print('le total time', totalTime)
 
-            throughput = totalBytes / (startTime - endTime)
+        throughput = totalBytes/ totalTime
+        #print('LE TOTAL BYTES', totalBytes)
+        print('throughput: ', throughput)
+        print()  #new ljne
             
 
 
