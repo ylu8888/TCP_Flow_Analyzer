@@ -1,8 +1,6 @@
 import dpkt
 
 def analysis_pcap_tcp(filename):
-
-    print('welcome')
     senderIP = '130.245.145.12'
     receiverIP = '128.208.2.198'
 
@@ -22,9 +20,9 @@ def analysis_pcap_tcp(filename):
                 if isinstance(ip.data, dpkt.tcp.TCP):   #if valid tcp packet
                     tcp = ip.data
 
-                    #we do not need to count the flows coming from port 80, also flows are bi-directional
+                    #we dont count tcp from source port80
                     if tcp.sport == 80:
-                        continue #traffic from port 80 is just ACK packets for seq #1
+                        continue 
 
                     if senderIP != '.'.join(str(ip) for ip in ip.src):
                         continue #if the source and dest ip addresses dont match
@@ -36,12 +34,13 @@ def analysis_pcap_tcp(filename):
                     if flowTuple not in tcpFlows:
                         tcpFlows[flowTuple] = []
                     
+                    #IF ITS NOT NEW TUPLE THEN ADD TCP To THE LIST OF OF OUR TUPLE
                     tcp.ts = timestamp #mabyue delete this
                     tcpFlows[flowTuple].append(tcp)  #add the tcp packet to our flow
 
                     
         
-    print("Number of TCP Flows:", len(tcpFlows))
+    print("Number of TCP Flows:", len(tcpFlows)) #first thing we want to answewr
     print()
 
     for flowTuple, tcpPackets in tcpFlows.items():
@@ -49,16 +48,32 @@ def analysis_pcap_tcp(filename):
 
         # print("first 2 transactions:")
 
-        print("this is the tcp len", len(tcpPackets))
+        #print("this is the tcp len", len(tcpPackets))
 
         count = 1
+        scaleFactor = 0
 
         for tcpPkt in tcpPackets:
+            
+            #WE GOTAT GET THE WINDOW SCALEING FACTOR FROM THE SYNNNNNN PACKET
+            if (tcpPkt.flags & dpkt.tcp.TH_SYN != 0) and (tcpPkt.flags & dpkt.tcp.TH_ACK == 0): 
+                leOptions = dpkt.tcp.parse_opts(tcpPkt.opts) #PARSE THE OPTIONS INTO (TYPE/DATA) TUPLES
+               # print('thIS LE OPTIONS', leOptions)
+
+                for optType, optData in leOptions: #LOOK THRU THE TUPLE 
+                    if optType == dpkt.tcp.TCP_OPT_WSCALE: #CHECK FOR THE WSCALE OPTION
+                        
+                        #look through options to get the window scaling factor TIMES the window value
+                         #scalefactor = 2 to the power of window factor and THEN multiply that by the tcp.win xD
+                        scaleFactor = optData[0] 
+                        scaleFactor = 2 ** scaleFactor 
+                        #print('scale factr', scaleFactor)
+                        break
             
             #check if NOT syn
             #check if HAS ack
             #check if has payload
-            if tcpPkt.flags & dpkt.tcp.TH_SYN == 0 and tcpPkt.flags & dpkt.tcp.TH_ACK != 0:
+            if (tcpPkt.flags & dpkt.tcp.TH_SYN == 0) and (tcpPkt.flags & dpkt.tcp.TH_ACK != 0):
                 paylen =  len(tcpPkt.data) #THIS THE PAYLOAD LENGTH
 
                 if paylen <= 0: #IF NO PAYLOAD THEN THIS NOT THE ONE
@@ -68,19 +83,12 @@ def analysis_pcap_tcp(filename):
 
                 print("sequence number:", tcpPkt.seq)
                 print("acknowledgment number:", tcpPkt.ack)
-
-                #look through options to get the window scaling factor TIMES the window value
-                print("receive window size:", tcpPkt.win)
+                print("receive window size:", tcpPkt.win * scaleFactor) 
                 print()  #new ljne
 
                 count += 1
-                if(count == 3):
+                if(count == 3): #only want the first 2 transactions
                     break
-
-
-        
-        #print()  # Add a newline between flows
-
 
 def main():
     analysis_pcap_tcp('assignment2.pcap')
