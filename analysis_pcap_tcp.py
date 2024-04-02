@@ -59,10 +59,24 @@ def analysis_pcap_tcp(filename):
         throughput = 0
         totalBytes = 0
 
+        rtt = 0
+        firstAck = True
+        firstAckTime = 0
+        #cwnd is the number of packets u can send before u get an ack
+        #for each rtt count the number of packets before u get the ack number
+        #do that 3 times for the 3 congestion windows
+        #based on the timestamps we count the number of packets within the rtt
+
         for index, tcpPkt in enumerate(tcpPackets):
             #ADD THE TOTAL BYTES FOR THE THRUPUT 
             totalBytes +=  len(tcpPkt.data) # add the payload
-            totalBytes += (tcpPkt.off * 4) # add the header    
+            totalBytes += (tcpPkt.off * 4) # add the header 
+
+            if(firstAck and (tcpPkt.flags & dpkt.tcp.TH_SYN == 0) and (tcpPkt.flags & dpkt.tcp.TH_ACK != 0)):
+                firstAckTime = tcpPkt.ts
+                rtt = firstAckTime - startTime
+                print('this the rtt', rtt)
+                firstAck = False  
 
             #GETTING THE LAST ACKKKKKK
             if index == len(tcpPackets) - 1:
@@ -128,8 +142,7 @@ def analysis_pcap_tcp(filename):
         #print('LE TOTAL BYTES', totalBytes)
         print('throughput:', throughput)
         print()  #new ljne
-            
-
+        
 
 
 def main():
