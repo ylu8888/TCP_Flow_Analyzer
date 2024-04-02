@@ -81,6 +81,10 @@ def analysis_pcap_tcp(filename):
         #do that 3 times for the 3 congestion windows
         #based on the timestamps we count the number of packets within the rtt
 
+        tripDupe = 0
+        totalTrans = 0
+        seqSet = set()
+
         for index, tcpPkt in enumerate(tcpPackets):
 
             if(flowTuple[1] == senderIP):   
@@ -88,7 +92,6 @@ def analysis_pcap_tcp(filename):
                 #ADD THE TOTAL BYTES FOR THE THRUPUT 
                 totalBytes +=  len(tcpPkt.data) # add the payload
                 totalBytes += (tcpPkt.off * 4) # add the header 
-
 
                 #IF WE HIT AN ACK
                 if(tcpPkt.flags & dpkt.tcp.TH_SYN == 0) and (tcpPkt.flags & dpkt.tcp.TH_ACK != 0):
@@ -183,6 +186,15 @@ def analysis_pcap_tcp(filename):
                 if (tcpPkt.flags & dpkt.tcp.TH_FIN != 0) and (tcpPkt.flags & dpkt.tcp.TH_ACK != 0): 
                     #print('HIT THE ACKKK', endTime)
                     almostLast = True
+                
+                #FINDING THE RETRANSMISSIONS
+                if tcpPkt.seq in seqSet:
+                    if index > 0:
+                        if tcpPackets[index - 1].seq != tcpPkt.seq:
+                            tripDupe += 1
+                    totalTrans += 1
+                
+                seqSet.add(tcpPkt.seq)
                             
         if(flowTuple[1] == senderIP):
             #throughput is total bytes of header + payload divided by the total time
@@ -195,6 +207,10 @@ def analysis_pcap_tcp(filename):
            # print('LE TOTAL BYTES', totalBytes)
             print('throughput:', throughput)
             print()  #new ljne
+
+            print('Total retransmissions', totalTrans)
+            print('Triple dupes acks', tripDupe)
+            print('Total timeouts', totalTrans - tripDupe)
 
 
 def main():
