@@ -71,10 +71,10 @@ def analysis_pcap_tcp(filename):
         almostLast = False
         throughput = 0
         totalBytes = 0
-        #rttCount = rtt
+       # rttCount = rtt
         firstAckTime = 0
         congestCount = 1
-       # byteSum = 0
+        byteSum = 0
         validPayload = False
 
         #cwnd is the number of packets u can send before u get an ack
@@ -96,6 +96,7 @@ def analysis_pcap_tcp(filename):
                     if(firstAck):
                         firstAckTime = tcpPkt.ts
                         rtt = firstAckTime - startTime
+                        rtt = round(rtt, 2)
                         rttCount = rtt
                         #print('this the rtt', rtt)
                         firstAck = False 
@@ -169,8 +170,9 @@ def analysis_pcap_tcp(filename):
                         #print('this the rttadadaw', 2 * rttCount)
                     # if(congestCount < 4):
                     #     validPayload = True #this boolean will help me see if we hit a payload packet
-
-                    if((firstAck == False) and (tcpPkt.ts - startTime) >= (2 * rttCount)):
+                    #if(index < 10):
+                        #print('this the rtt + rttCount', round(rtt + rttCount, 2))
+                    if((firstAck == False) and (tcpPkt.ts - startTime) >= (rtt + rttCount)):
                             if(congestCount < 4):
                                 #print('this the tcpPkt tiemstamp', tcpPkt.ts - startTime)
                                 print('Congestion Window', congestCount, ':', byteSum)
