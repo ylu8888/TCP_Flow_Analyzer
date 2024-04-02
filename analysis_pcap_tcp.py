@@ -107,12 +107,8 @@ def analysis_pcap_tcp(filename):
                                 # if the diff between the two packets is below a certain alpha
                                 # then u would call it congestion
                                 # and u would count that packet as a congestion tcpPacket and thats it
-
-                                #10
-                                #20
-                                #33
-
                                 #it's the count which is the number of packets
+                        
                                 #for dupe acks retransmission
                                 #inspect both the receiver and sender flows
                                 #identify all the packets that have been retransmitted frm the sender
@@ -120,12 +116,7 @@ def analysis_pcap_tcp(filename):
                                 #line up the 3 ack numbers
                                 #loop over receiver and sender packets with i in range
                                 #use that i to identify what those acks are
-                                
-                                #flows in order
-                                
-                                # Flow: 43498, Triple Ack: 2, Timeout: 1
-                                # Flow: 43500, Triple Ack: 4, Timeout:90
-                                # Flow: 43502, Triple Ack: 0, Timeout: 0
+
 
                 #GETTING THE LAST ACKKKKKK
                 if index == len(tcpPackets) - 1:
@@ -165,10 +156,7 @@ def analysis_pcap_tcp(filename):
                         continue
                     
                     byteSum += 1
-                    
-                        #print('this the rttadadaw', 2 * rttCount)
-                    # if(congestCount < 4):
-                    #     validPayload = True #this boolean will help me see if we hit a payload packet
+                                        
                     #if(index < 10):
                         #print('this the rtt + rttCount', round(rtt + rttCount, 2))
                     if((firstAck == False) and (tcpPkt.ts - startTime) >= round((rtt + rttCount),2)):
@@ -178,7 +166,7 @@ def analysis_pcap_tcp(filename):
                                 byteSum = 0 #reset the bytesum
                                 congestCount += 1 #incremnt congestCount by 1 cus we only want 3
                                 rttCount += rtt #double the rtt now
-                                print('this the new rtt', rttCount)
+                                #print('this the new rtt', rttCount)
 
                     if(count < 3): #only want the first 2 transactions
                         print("transaction", count, ":")
@@ -195,10 +183,7 @@ def analysis_pcap_tcp(filename):
                 if (tcpPkt.flags & dpkt.tcp.TH_FIN != 0) and (tcpPkt.flags & dpkt.tcp.TH_ACK != 0): 
                     #print('HIT THE ACKKK', endTime)
                     almostLast = True
-                    
-           
                             
-                        
         if(flowTuple[1] == senderIP):
             #throughput is total bytes of header + payload divided by the total time
             #the time is just the time between the FIRST syn
@@ -210,7 +195,6 @@ def analysis_pcap_tcp(filename):
            # print('LE TOTAL BYTES', totalBytes)
             print('throughput:', throughput)
             print()  #new ljne
-        
 
 
 def main():
