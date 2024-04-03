@@ -14,7 +14,7 @@
 
 ## **HOW I FOUND THE CALCULATIONS**
 
-## **FINDING THE FLOWS**
+## **Finding the Flows**
 
 The code loops through the packets in the pcap file and creates tuples for each flow with source and destination IP addresses and port numbers. These get stored into a dictionary which maps flow tuples to lists of packets. The code only prints out the tcp flows from the sender and doesn't count the receiver flows from source port 80, so there's only 3 flows we care about.
 
