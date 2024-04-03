@@ -237,9 +237,10 @@ def analysis_pcap_tcp(filename):
                     if tripCount > 2:
                         tripDupe.append(tran)
 
-                print('Total retransmissions', len(transArr))
-                print('Triple dupes acks', len(tripDupe))
-                print('Total timeouts', totalTrans - len(tripDupe))
+                print('Total retransmissions:', len(transArr))
+                print('Triple dupes acks:', len(tripDupe))
+                print('Total timeouts:', totalTrans - len(tripDupe))
+                print()
             else:
                 for tran in transArr:
                     tripCount = 0
@@ -253,11 +254,10 @@ def analysis_pcap_tcp(filename):
                     if tripCount > 2:
                         tripDupe.append(tran)
 
-                print('Total retransmissions', len(transArr))
-                print('Triple dupes acks', ackers)
-                print('Total timeouts', totalTrans - ackers)
-                
-
+                print('Total retransmissions:', len(transArr))
+                print('Triple dupes acks:', ackers)
+                print('Total timeouts:', totalTrans - ackers)
+                print()
 
 def main():
     analysis_pcap_tcp('assignment2.pcap')
