@@ -49,6 +49,16 @@ def analysis_pcap_tcp(filename):
     firstAck = True
     rtt = 0
 
+    recvPkts = []
+    senderPkts = []
+
+    for flowTuple, tcpPackets in tcpFlows.items():
+        for index, tcpPkt in enumerate(tcpPackets):
+            if(flowTuple[1] == senderIP):
+                senderPkts.append(tcpPkt)
+            if(flowTuple[1] == receiverIP):
+                recvPkts.append(tcpPkt)
+
     for flowTuple, tcpPackets in tcpFlows.items():
 
         # if(flowTuple[1] == receiverIP):
@@ -71,23 +81,25 @@ def analysis_pcap_tcp(filename):
         almostLast = False
         throughput = 0
         totalBytes = 0
-        rttCount = rtt
-        firstAckTime = 0
-        congestCount = 1
-        byteSum = 0
 
         #cwnd is the number of packets u can send before u get an ack
         #for each rtt count the number of packets before u get the ack number
         #do that 3 times for the 3 congestion windows
         #based on the timestamps we count the number of packets within the rtt
+        rttCount = rtt
+        firstAckTime = 0
+        congestCount = 1
+        byteSum = 0
 
-        tripDupe = 0
+        #counting retransmissions
+        tripDupe = []
         totalTrans = 0
+        transArr = []
         seqSet = set()
 
         for index, tcpPkt in enumerate(tcpPackets):
 
-            if(flowTuple[1] == senderIP):   
+            if(flowTuple[1] == senderIP):  
 
                 #ADD THE TOTAL BYTES FOR THE THRUPUT 
                 totalBytes +=  len(tcpPkt.data) # add the payload
@@ -102,24 +114,6 @@ def analysis_pcap_tcp(filename):
                         rttCount = rtt
                         #print('this the rtt', rtt)
                         firstAck = False 
-                    
-
-                                #loop over the sender packets
-                                # count all of those
-                                # track this packet and the previous packet as u loop
-                                # if the diff between the two packets is below a certain alpha
-                                # then u would call it congestion
-                                # and u would count that packet as a congestion tcpPacket and thats it
-                                #it's the count which is the number of packets
-                        
-                                #for dupe acks retransmission
-                                #inspect both the receiver and sender flows
-                                #identify all the packets that have been retransmitted frm the sender
-                                #lets loop over the receiver packets and try to line up those ack numbers
-                                #line up the 3 ack numbers
-                                #loop over receiver and sender packets with i in range
-                                #use that i to identify what those acks are
-
 
                 #GETTING THE LAST ACKKKKKK
                 if index == len(tcpPackets) - 1:
@@ -159,6 +153,14 @@ def analysis_pcap_tcp(filename):
                         continue
                     
                     byteSum += 1
+
+                    #loop over the sender packets
+                    # count all of those
+                    # track this packet and the previous packet as u loop
+                    # if the diff between the two packets is below a certain alpha
+                    # then u would call it congestion
+                    # and u would count that packet as a congestion tcpPacket and thats it
+                    #it's the count which is the number of packets
                                         
                     #if(index < 10):
                         #print('this the rtt + rttCount', round(rtt + rttCount, 2))
@@ -189,12 +191,11 @@ def analysis_pcap_tcp(filename):
                 
                 #FINDING THE RETRANSMISSIONS
                 if tcpPkt.seq in seqSet:
-                    if index > 0:
-                        if tcpPackets[index - 1].seq != tcpPkt.seq:
-                            tripDupe += 1
+                    transArr.append(tcpPkt)
                     totalTrans += 1
                 
                 seqSet.add(tcpPkt.seq)
+                
                             
         if(flowTuple[1] == senderIP):
             #throughput is total bytes of header + payload divided by the total time
@@ -208,9 +209,27 @@ def analysis_pcap_tcp(filename):
             print('throughput:', throughput)
             print()  #new ljne
 
-            print('Total retransmissions', totalTrans)
-            print('Triple dupes acks', tripDupe)
-            print('Total timeouts', totalTrans - tripDupe)
+            #for dupe acks retransmission
+            #inspect both the receiver and sender flows
+            #identify all the packets that have been retransmitted frm the sender
+            #lets loop over the receiver packets and try to line up those ack numbers
+            #line up the 3 ack numbers
+            #loop over receiver and sender packets with i in range
+            #use that i to identify what those acks are
+            for tran in transArr:
+                tripCount = 0
+                # print('len of recvPkts', len(recvPkts))
+                # print('len of senderPkts', len(senderPkts))
+                for i in range(0, len(recvPkts)):
+                    #print('INNER FOR LOOP')
+                    if tran.seq == recvPkts[i].ack:
+                        tripCount += 1
+                if tripCount > 2:
+                    tripDupe.append(tran)
+
+            print('Total retransmissions', len(transArr))
+            print('Triple dupes acks', len(tripDupe))
+            print('Total timeouts', totalTrans - len(tripDupe))
 
 
 def main():
