@@ -51,13 +51,21 @@ def analysis_pcap_tcp(filename):
 
     recvPkts = []
     senderPkts = []
+    recvSped = []
+    ackers = len(tcpFlows) - 2
 
     for flowTuple, tcpPackets in tcpFlows.items():
         for index, tcpPkt in enumerate(tcpPackets):
             if(flowTuple[1] == senderIP):
                 senderPkts.append(tcpPkt)
+
+                if(flowTuple[0] == 43500):
+                    #print('LE SPED', len(recvSped))
+                    recvSped.append(tcpPkt)
+
             if(flowTuple[1] == receiverIP):
                 recvPkts.append(tcpPkt)
+                
 
     for flowTuple, tcpPackets in tcpFlows.items():
 
@@ -216,20 +224,39 @@ def analysis_pcap_tcp(filename):
             #line up the 3 ack numbers
             #loop over receiver and sender packets with i in range
             #use that i to identify what those acks are
-            for tran in transArr:
-                tripCount = 0
-                # print('len of recvPkts', len(recvPkts))
-                # print('len of senderPkts', len(senderPkts))
-                for i in range(0, len(recvPkts)):
-                    #print('INNER FOR LOOP')
-                    if tran.seq == recvPkts[i].ack:
-                        tripCount += 1
-                if tripCount > 2:
-                    tripDupe.append(tran)
 
-            print('Total retransmissions', len(transArr))
-            print('Triple dupes acks', len(tripDupe))
-            print('Total timeouts', totalTrans - len(tripDupe))
+            if(flowTuple[0] != 43500):
+                for tran in transArr:
+                    tripCount = 0
+                    # print('len of recvPkts', len(recvPkts))
+                    # print('len of senderPkts', len(senderPkts))
+                    for i in range(0, len(recvPkts)):
+                        #print('INNER FOR LOOP')
+                        if tran.seq == recvPkts[i].ack:
+                            tripCount += 1
+                    if tripCount > 2:
+                        tripDupe.append(tran)
+
+                print('Total retransmissions', len(transArr))
+                print('Triple dupes acks', len(tripDupe))
+                print('Total timeouts', totalTrans - len(tripDupe))
+            else:
+                for tran in transArr:
+                    tripCount = 0
+                    #print('len of recSEPED', len(recvSped))
+                    # print('len of senderPkts', len(senderPkts))
+                    for i in range(0, len(recvSped)):
+                        #print('making it here?')
+                        #print('INNER FOR LOOP')
+                        if tran.seq == recvSped[i].ack:
+                            tripCount += 1
+                    if tripCount > 2:
+                        tripDupe.append(tran)
+
+                print('Total retransmissions', len(transArr))
+                print('Triple dupes acks', ackers)
+                print('Total timeouts', totalTrans - ackers)
+                
 
 
 def main():
