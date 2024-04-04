@@ -2,7 +2,7 @@
 
 **PCAP TCP Flows Parsing and Analysis: Python Dpkt Library**
 
-## **HOW TO RUN THE PROGRAM**
+## **How to Run the Program**
   
 1) In the terminal type: pip install dpkt
    
@@ -12,7 +12,7 @@
 
 4) NOTE: The main method calls analysis_pcap_tcp('assignment2.pcap') so if your pcap file is another name for example 'testcase.pcap' then you should change that in order to run the code properly.
 
-## **HOW I FOUND THE CALCULATIONS**
+## **Calculations**
 
 ## **Finding the Flows**
 
